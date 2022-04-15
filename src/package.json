@@ -1,0 +1,24 @@
+{
+  "name": "kinesis-firehose-http-fluentd-forwarder",
+  "version": "1.0.0",
+  "description": "# whats inside",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://gintautasm@github.com/gintautasm/kinesis-firehose-http-fluentd-forwarder.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/gintautasm/kinesis-firehose-http-fluentd-forwarder/issues"
+  },
+  "homepage": "https://github.com/gintautasm/kinesis-firehose-http-fluentd-forwarder#readme",
+  "dependencies": {
+    "@fluent-org/logger": "^1.0.8",
+    "body-parser": "^1.19.2",
+    "express": "^4.17.3"
+  }
+}

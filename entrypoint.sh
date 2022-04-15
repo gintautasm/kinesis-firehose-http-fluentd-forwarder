@@ -25,6 +25,6 @@ if [ "$1" = "fluentd" ]; then
     fi
 fi
 
-ruby /hello.rb &
+node /server.js &
 
 exec "$@"

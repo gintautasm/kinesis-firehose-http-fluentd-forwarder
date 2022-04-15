@@ -20,11 +20,20 @@ RUN buildDeps="sudo make gcc g++ libc-dev" \
     && rm -rf /var/lib/apt/lists/* \
     && rm -rf /tmp/* /var/tmp/* /usr/lib/ruby/gems/*/cache/*.gem
 
-COPY hello.rb /
-RUN chmod +x /hello.rb
+RUN apt-get update \
+    && apt-get install -y curl \
+    && curl -fsSL https://deb.nodesource.com/setup_lts.x | bash - \
+    && apt-get install -y nodejs
+
+COPY src /
+RUN chmod +x /server.js
+
+RUN npm install
 
 COPY fluent.conf /fluentd/etc/
 COPY entrypoint.sh /bin/
+
+ENV HTTP_SERVER_PORT=6464
 
 RUN chmod +x /bin/entrypoint.sh
 
