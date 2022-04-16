@@ -34,9 +34,8 @@ docker run --rm \
 curl -iv -X POST \
     http://localhost:6464/firehose \
     -H 'Content-Type: application/json,charset=utf8' \
-    -H 'Accept: application/json,charset=utf8' \
     -d '{
-        "RequestId":1,
+        "requestId":1,
         "my-message":"this should work"
     }'
 ```
