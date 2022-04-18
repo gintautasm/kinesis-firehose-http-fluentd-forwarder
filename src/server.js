@@ -7,14 +7,14 @@ const app = express()
 
 app.use(bodyParser.json())
 
-const FluentClient = require("@fluent-org/logger").FluentClient;
-const logger = new FluentClient("cloudwatch.input", {
-    socket: {
-        host: "localhost",
-        port: 24224,
-        timeout: 3000, // 3 seconds
-    }
-});
+// const FluentClient = require("@fluent-org/logger").FluentClient;
+// const logger = new FluentClient("cloudwatch.input", {
+//     socket: {
+//         host: "localhost",
+//         port: 24224,
+//         timeout: 3000, // 3 seconds
+//     }
+// });
 
 const processData = (logEvents) => {
     logEvents.map(logEvent => {
@@ -25,6 +25,29 @@ const processData = (logEvents) => {
 
 }
 
+const EVENT_NAME = 'cloudwatch.input'
+eventEmitter.addListener(EVENT_NAME, (buffer) => {
+    const records = buffer.pop()?.records
+    if (!records) return
+
+    records.map(record => {
+        let decodedData = JSON.parse(Buffer.from(record.data, 'base64'))
+        // // firehose test provides ticker
+        // if (JSON.parse(decodedData).SECTOR !== 'ENERGY') return
+
+        // // cloudwatch logs can have no data
+        // if (record.data.messageType !== 'DATA_MESSAGE') {
+        //     //console.log(record.data)
+        //     return;
+        // }
+
+        // processData(record.data.logEvents)
+        //logger.emit(decodedData)
+        console.log(JSON.parse(decodedData))
+    })
+
+})
+
 
 app.get('/', function (req, res) {
     res.setHeader('content-type', 'application/json')
@@ -32,16 +55,12 @@ app.get('/', function (req, res) {
 })
 
 const firehoseRqsBuffer = []
-const MAX_BUFFER_SIZE = 5
+const MAX_BUFFER_SIZE = process.env['MAX_BUFFER_SIZE'] || 5
 
-app.post('/firehose', function (req, res) {
-
+app.post(`/${EVENT_NAME}`, function (req, res) {
     if (firehoseRqsBuffer.length < MAX_BUFFER_SIZE) {
 
-        //firehoseRqsBuffer.push(Object.assign({}, req.body))
-
-
-        //console.log(firehoseRqsBuffer[0], req.body)
+        firehoseRqsBuffer.push(req.body)
 
         res.setHeader('content-type', 'application/json')
         res.status(200).send(JSON.stringify({
@@ -49,34 +68,19 @@ app.post('/firehose', function (req, res) {
             timestamp: Math.floor(Date.now())
         }))
 
-        //eventEmitter.emit('cloudwatch.input', firehoseRqsBuffer)
-        return
+    } else {
+
+        res.setHeader('content-type', 'application/json')
+        res.status(429).send(JSON.stringify({
+            'requestId': req.body.requestId,
+            timestamp: Math.floor(Date.now()),
+            errorMessage: 'request buffer is full'
+        }))
     }
 
-    res.setHeader('content-type', 'application/json')
-    res.status(429).send(JSON.stringify({
-        'requestId': req.body.requestId,
-        timestamp: Math.floor(Date.now()),
-        errorMessage: 'request buffer is full'
-    }))
-
-    eventEmitter.emit('cloudwatch.input', firehoseRqsBuffer)
-
-    // req.body.records.map(record => {
-    //     let decodedData = Buffer.from(record.data, 'base64')
-    //     // if (record.data.messageType !== 'DATA_MESSAGE') {
-    //     //     //console.log(record.data)
-    //     //     return;
-    //     // }
-
-    //     // processData(record.data.logEvents)
-    //     logger.emit(decodedData)
-    // })
+    eventEmitter.emit(EVENT_NAME, firehoseRqsBuffer)
 })
 
-eventEmitter.addListener('cloudwatch.input', (buffer) => {
-    logger.emit(buffer.pop())
-
-})
-
-app.listen(process.env['HTTP_SERVER_PORT'])
+const port = process.env['HTTP_SERVER_PORT'] || 6464
+console.log('listening on port:', port)
+app.listen(port)
